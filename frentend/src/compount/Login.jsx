@@ -12,25 +12,26 @@ function Login() {
 
   const fetchLogin = async (e) => {
     e.preventDefault();
-
-    console.log(userDetails);
-    try {
-      const res = await axios.post(Api, userDetails);
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("user", JSON.stringify(res.data.user));
-      alert("login successfuly");
-      nav("/welcom");
-    } catch (error) {
-      console.log(error);
-      alert(error.response.data.message);
+    if (!email || !password) {
+      alert("Please fill all fields");
+    } else {
+      try {
+        const res = await axios.post(Api, userDetails);
+        localStorage.setItem("token", res.data.token);
+        localStorage.setItem("user", JSON.stringify(res.data.user));
+        alert("login successfuly");
+        nav("/welcom");
+      } catch (error) {
+        console.log(error);
+        alert(error.response.data.message);
+      }
     }
   };
 
   return (
     <>
-      <Header />
-      <div className="container">
-        <form onSubmit={fetchLogin} className="">
+      <div className="container text-center">
+        <form onSubmit={fetchLogin} className="col-md-6 m-auto">
           <h4 className="text-center"> Login</h4>
           <input
             className="form-control m-2 p-2"

@@ -1,21 +1,13 @@
 import { useState } from "react";
-
 import Button from "react-bootstrap/Button";
 import Modal from "react-bootstrap/Modal";
 import { NavLink } from "react-router-dom";
 import Search from "../screens/Search";
 
-function FollowingList({ data }) {
+function FollowersList({ data }) {
   const [show, setShow] = useState(false);
-  const {
-    user,
-    userFollowing,
-    followUser,
-    unfollowUser,
-    isFollow,
-    ref,
-    setRef,
-  } = data;
+  const { user, userFollowers, followUser, unfollowUser, ref, setRef } = data;
+  console.log("follower page 10");
   let token = localStorage.getItem("token");
   let userId;
   if (token) {
@@ -23,16 +15,17 @@ function FollowingList({ data }) {
   } else {
     userId = "";
   }
-  console.log("following page 26");
+
+  console.log("follower 13");
 
   const [state, setstate] = useState({
     query: "",
     list: [],
   });
   const handleChange = (e) => {
-    const results = userFollowing.filter((item) => {
+    const results = userFollowers.filter((item) => {
       if (e.target.value === "") {
-        return userFollowing;
+        return userFollowers;
       } else {
         return item.userName
           .toLowerCase()
@@ -48,7 +41,7 @@ function FollowingList({ data }) {
   return (
     <>
       <p variant="primary" onClick={() => setShow(true)}>
-        Following
+        Followers
       </p>
 
       <Modal
@@ -69,6 +62,7 @@ function FollowingList({ data }) {
             placeholder="Search UserName"
           />
         </form>
+
         <Modal.Body>
           <div>
             {state.query !== "" ? (
@@ -117,10 +111,10 @@ function FollowingList({ data }) {
             ) : (
               ""
             )}
-            Following
-            {userFollowing !== "" ? (
+            <p>Followers</p>
+            {userFollowers !== "" ? (
               <>
-                {userFollowing.map((item) => {
+                {userFollowers.map((item) => {
                   return (
                     <>
                       <NavLink
@@ -130,7 +124,6 @@ function FollowingList({ data }) {
                             : `/profile/${item._id}`
                         }
                       >
-                        {console.log(item._id)}
                         <div
                           key={item._id}
                           className="d-flex gap-3 mb-2"
@@ -160,7 +153,6 @@ function FollowingList({ data }) {
                     </>
                   );
                 })}
-                
               </>
             ) : (
               <>""</>
@@ -172,4 +164,4 @@ function FollowingList({ data }) {
   );
 }
 
-export default FollowingList;
+export default FollowersList;

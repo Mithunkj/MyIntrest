@@ -1,14 +1,14 @@
-import EmojiPicker from "emoji-picker-react";
 import { useState } from "react";
-import { NavLink } from "react-bootstrap";
 import Modal from "react-bootstrap/Modal";
 import { CiFaceSmile } from "react-icons/ci";
+import "../style/message.css";
 
-function CommentData({ data }) {
+function CommentData({ values }) {
   const [show, setShow] = useState(false);
-  const { item, comment, setComment, feactComment } = data;
+  const { item, comment, setComment, feactComment } = values;
+
   let user = JSON.parse(localStorage.getItem("user"));
-  console.log(item);
+
   return (
     <>
       <button className="btn w-100 cardTitle" onClick={() => setShow(true)}>
@@ -33,39 +33,67 @@ function CommentData({ data }) {
         </div>
         <p className="text-center mb-0">Commnets</p>
         <div className="commentCardBody">
-          <div className="ps-2 commentBody">
+          <div className="commentBody">
             {item.comments.map((postItem) => {
-              {
-                /* console.log(postItem.postedBy._id); */
-              }
               let min = postItem.postedBy.createdAt.slice(11, 13);
               let houre = postItem.postedBy.createdAt.slice(13, 16);
               let time =
                 min > 12 ? `${min - 12}${houre} PM` : `${min}${houre} AM`;
-              {
-                /* console.log(postItem.postedBy.createdAt.slice(0, 10)); */
-              }
+
               return (
                 <>
-                  <div className="d-flex flex-wrap gap-3 m-2">
-                    <div className="postImgTop">
-                      <img
-                        className="userImg"
-                        src={
-                          postItem.postedBy.Photo
-                            ? postItem.postedBy.Photo
-                            : "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg?w=826&t=st=1689934495~exp=1689935095~hmac=71350deb4cde0675b1953db745e3b8a0d989993f5f9eee39a80815ceb22ffbf9"
-                        }
-                      />
-                    </div>
-                    <p>{postItem.postedBy.userName}</p>
-                    <p>{`${postItem.postedBy.createdAt.slice(
-                      0,
-                      10
-                    )} ${time}`}</p>
-                  </div>
                   <div>
-                    <p>{postItem.comment}</p>
+                    {postItem.postedBy._id === user._id ? (
+                      <>
+                        <div className="message-orange">
+                          <div className="d-flex flex-wrap gap-3 mb-2">
+                            <div className="postImgTop">
+                              <img
+                                className="userImg"
+                                src={
+                                  postItem.postedBy.Photo
+                                    ? postItem.postedBy.Photo
+                                    : "/images/user.png"
+                                }
+                              />
+                            </div>
+                            <p>{postItem.postedBy.userName}</p>
+                            <p>{`${postItem.postedBy.createdAt.slice(
+                              0,
+                              10
+                            )} ${time}`}</p>
+                          </div>
+                          <pre className="message-content">
+                            {postItem.comment}
+                          </pre>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="message-blue">
+                          <div className="d-flex flex-wrap gap-3 mb-2">
+                            <div className="postImgTop">
+                              <img
+                                className="userImg"
+                                src={
+                                  postItem.postedBy.Photo
+                                    ? postItem.postedBy.Photo
+                                    : "/images/user.png"
+                                }
+                              />
+                            </div>
+                            <p>{postItem.postedBy.userName}</p>
+                            <p>{`${postItem.postedBy.createdAt.slice(
+                              0,
+                              10
+                            )} ${time}`}</p>
+                          </div>
+                          <pre className="message-content ">
+                            {postItem.comment}
+                          </pre>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </>
               );

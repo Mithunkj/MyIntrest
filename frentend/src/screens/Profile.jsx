@@ -1,25 +1,36 @@
 import React, { useEffect, useState } from "react";
-import Header from "../compount/Header";
 import axios from "axios";
 import PostDetail from "../compount/PostDetail";
 import ProfilePic from "../compount/ProfilePic";
-import { config } from "../config/config";
+import { config, config1 } from "../config/config";
 import FollowingList from "../compount/FollowingList";
+import FollowersList from "../compount/FollowersList";
+import CarouselPage from "../compount/helper/CarouselPage";
+import { useNavigate } from "react-router-dom";
 
 function Profile() {
-  const [like, setLike] = useState(false);
   const [comment, setComment] = useState("");
-  const [changePic, setChangePic] = useState(false);
   const [url, setUrl] = useState();
   const [allPost, setAllPost] = useState([]);
   const [user, setUser] = useState([]);
+  const [userFollowing, setUserFollowing] = useState([]);
+  const [userFollowers, setUserFollowers] = useState([]);
+  const [story, setStory] = useState([]);
+  const [isFollow, setIsFollow] = useState(false);
   const [postLength, setPostLength] = useState();
   const [loading, setLoading] = useState(false);
+  const [ref, setRef] = useState(false);
 
+  const nav = useNavigate();
   let limit = 12;
   let skip = 0;
-
-  let userInfo = JSON.parse(localStorage.getItem("user"));
+  const token = localStorage.getItem("token");
+  let userInfo;
+  if (token) {
+    userInfo = JSON.parse(localStorage.getItem("user"));
+  } else {
+    userInfo = "";
+  }
 
   const fetchAllPost = async () => {
     if (loading === false) {
@@ -27,20 +38,33 @@ function Profile() {
     } else {
       setLoading(false);
     }
-    const res = await axios.get(
-      `http://localhost:8000/user/${userInfo._id}?limit=${limit}`,
-      config
-    );
 
-    const resData = await res.data;
-    const resDataPost = await resData.post;
-    setAllPost(resDataPost);
-    //setAllPost((allPost) => [...allPost, ...resDataPost]);
-    setUser(resData.user);
-    setPostLength(resData.postLength);
-    //console.log(resData);
-    console.log(resData);
-    console.log(allPost);
+    try {
+      const res = await axios.get(
+        `http://localhost:8000/user/${userInfo._id}?limit=${limit}`,
+        config
+      );
+
+      const resData = await res.data;
+      const resDataPost = await resData.post;
+      setAllPost(resDataPost);
+      //setAllPost((allPost) => [...allPost, ...resDataPost]);
+      console.log("setting user info ");
+      setUser(resData.user);
+      setUserFollowing(resData.user.following);
+      setUserFollowers(resData.user.followers);
+      setPostLength(resData.postLength);
+      setStory(resData.user.story);
+      let id = JSON.parse(localStorage.getItem("user"))._id;
+      resData.user.followers.forEach((element) => {
+        if (element._id === id) {
+          setIsFollow(true);
+        }
+      });
+    } catch (error) {
+      console.log(error);
+      alert(error.response.data.message);
+    }
   };
 
   const handleScroll = () => {
@@ -51,7 +75,6 @@ function Profile() {
       limit = limit + 12;
       //skip = skip + 6;
       fetchAllPost();
-      console.log("test 1");
     }
   };
 
@@ -62,22 +85,18 @@ function Profile() {
         { postId: id },
         config
       );
-      console.log(res);
       const resData = await res.data.data;
-      console.log(resData._id);
-
       const newData = allPost.map((posts) => {
-        console.log(posts._id);
-        if (posts._id == resData._id) {
+        if (posts._id === resData._id) {
           return resData;
         } else {
           return posts;
         }
       });
-
       setAllPost(newData);
     } catch (error) {
       console.log(error);
+      alert(error.response.data.message);
     }
   };
 
@@ -88,19 +107,14 @@ function Profile() {
         { postId: id },
         config
       );
-      console.log(res);
       const resData = await res.data.data;
-      console.log(resData._id);
-
       const newData = allPost.map((posts) => {
-        console.log(posts._id);
-        if (posts._id == resData._id) {
+        if (posts._id === resData._id) {
           return resData;
         } else {
           return posts;
         }
       });
-
       setAllPost(newData);
     } catch (error) {
       console.log(error);
@@ -115,17 +129,13 @@ function Profile() {
         config
       );
       const resData = await res.data.data;
-      console.log(resData._id);
-
       const newData = allPost.map((posts) => {
-        console.log(posts._id);
-        if (posts._id == resData._id) {
+        if (posts._id === resData._id) {
           return resData;
         } else {
           return posts;
         }
       });
-
       setAllPost(newData);
       setComment("");
     }
@@ -151,9 +161,54 @@ function Profile() {
     }
   };
 
+  const followUser = async (userId) => {
+    const res = await axios.put(
+      `http://localhost:8000/user/follow`,
+      { followId: userId },
+      config
+    );
+    setIsFollow(true);
+    const resData = await res.data.data;
+    setUser(resData);
+    setUserFollowing(resData.following);
+    setUserFollowers(resData.followers);
+  };
+
+  const unfollowUser = async (userId) => {
+    const res = await axios.put(
+      `http://localhost:8000/user/unfollow`,
+      { followId: userId },
+      config
+    );
+    setIsFollow(false);
+    const resData = await res.data.data;
+    setUser(resData);
+    setUserFollowing(resData.following);
+    setUserFollowers(resData.followers);
+  };
+
+  const deleteStory = async (id) => {
+    console.log("delete story");
+    // const res = await axios.put(
+    //   "http://localhost:8000/user/deleteStory",
+    //   { storyId: id },
+    //   config1
+    // );
+
+    console.log(id);
+  };
   useEffect(() => {
-    fetchAllPost();
-    console.log("test 3");
+    if (!token) {
+      nav("/login");
+    }
+    if (token) {
+      if (!userInfo) {
+        nav("/");
+      } else {
+        fetchAllPost();
+      }
+    }
+
     window.addEventListener("scroll", handleScroll);
     return () => {
       window.removeEventListener("scroll", handleScroll);
@@ -161,33 +216,60 @@ function Profile() {
   }, []);
 
   useEffect(() => {
-    console.log("test 4");
     if (url) {
       changeProfilePhoto();
     }
   }, [url]);
 
-  console.log(user);
   return (
     <>
-      <Header />
-
       <div className="container contenerUser">
         <div className="userInfo">
+          {console.log("profile page 207")}
           <ProfilePic data={{ user, changeProfilePhoto, setUrl }} />
           <div className="userInfoBody">
             <h2>{userInfo.userName}</h2>
             <div className="userInfo">
               <p>{postLength ? postLength : "0"} post </p>
-              <p>{user.follower ? user.follower.length : "0"} followers</p>
-              <p className="d-flex gap-2">
+              <p>
+                {user.followers ? user.followers.length : "0"}
+                <FollowersList
+                  data={{
+                    user,
+                    userFollowers,
+                    followUser,
+                    unfollowUser,
+                    isFollow,
+                    ref,
+                    setRef,
+                  }}
+                />
+              </p>
+              <p>
                 {user.following ? user.following.length : "0"}
-                <FollowingList user={user} />
+                <FollowingList
+                  data={{
+                    user,
+                    userFollowing,
+                    followUser,
+                    unfollowUser,
+                    isFollow,
+                    ref,
+                    setRef,
+                  }}
+                />
               </p>
             </div>
           </div>
         </div>
         <hr />
+
+        <CarouselPage
+          item={story}
+          userData={userInfo}
+          deleteStory={deleteStory}
+        />
+
         <div className="rowCard">
           {allPost.map((item) => {
             return (
@@ -207,16 +289,6 @@ function Profile() {
             );
           })}
         </div>
-        {/* {!loading ? (
-          <></>
-        ) : (
-          <>
-            <div className="loadingTop">
-              <div className="loading"></div>
-              <p className="fs-4">Loading...</p>
-            </div>
-          </>
-        )} */}
       </div>
     </>
   );

@@ -1,5 +1,4 @@
 import React from "react";
-import Header from "../compount/Header";
 import { useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -9,6 +8,9 @@ import { FcLike } from "react-icons/fc";
 import { CiFaceSmile } from "react-icons/ci";
 import CommentData from "../compount/CommentData";
 import { config } from "../config/config";
+import Search from "./Search";
+import { Carousel } from "react-bootstrap";
+import CarouselPage from "../compount/helper/CarouselPage";
 
 function FollowingPost() {
   const nav = useNavigate();
@@ -18,27 +20,36 @@ function FollowingPost() {
   const [like, setLike] = useState(false);
   const [comment, setComment] = useState("");
   const [loading, setLoading] = useState(false);
+  const [story, setStory] = useState([]);
+  const [allStory, setAllStory] = useState([]);
+  const [openCarousel, setOpenCarousel] = useState(false);
   const token = localStorage.getItem("token");
-  let userId = JSON.parse(localStorage.getItem("user"))._id;
+
+  let userId;
+  if (token) {
+    userId = JSON.parse(localStorage.getItem("user"))._id;
+  } else {
+    userId = "";
+  }
 
   let limit = 3;
   let skip = 0;
 
   const fetchAllPost = async () => {
-    // if (loading === false) {
-    //   setLoading(true);
-    // } else {
-    //   setLoading(false);
-    // }
-    const res = await axios.get(
-      `http://localhost:8000/user/followingpost?limit=${limit}&skip=${skip}`,
-      config
-    );
-    const resData = await res.data;
-    console.log(res);
-    const resAllData = await resData.data;
-    // setAllPost(resAllData);
-    setAllPost((allPost) => [...allPost, ...resAllData]);
+    try {
+      const res = await axios.get(
+        `http://localhost:8000/user/followingpost?limit=${limit}&skip=${skip}`,
+        config
+      );
+      const resData = await res.data;
+      const resAllData = await resData.data;
+      setAllPost((allPost) => [...allPost, ...resAllData]);
+      setStory(resData.following[0].story);
+      setAllStory(resData.following[0].following);
+    } catch (error) {
+      console.log(error);
+      alert(error.response.data.message);
+    }
   };
 
   const handleScroll = () => {
@@ -51,7 +62,7 @@ function FollowingPost() {
       fetchAllPost();
     }
   };
-  console.log(allPost);
+
   const feactLike = async (id) => {
     try {
       const res = await axios.put(
@@ -60,8 +71,6 @@ function FollowingPost() {
         config
       );
       const resData = await res.data.data;
-      console.log(resData._id);
-
       const newData = allPost.map((posts) => {
         console.log(posts._id);
         if (posts._id == resData._id) {
@@ -70,7 +79,6 @@ function FollowingPost() {
           return posts;
         }
       });
-
       setAllPost(newData);
     } catch (error) {
       console.log(error);
@@ -85,17 +93,13 @@ function FollowingPost() {
         config
       );
       const resData = await res.data.data;
-      console.log(resData._id);
-
       const newData = allPost.map((posts) => {
-        console.log(posts._id);
         if (posts._id == resData._id) {
           return resData;
         } else {
           return posts;
         }
       });
-
       setAllPost(newData);
     } catch (error) {
       console.log(error);
@@ -103,34 +107,38 @@ function FollowingPost() {
   };
 
   const feactComment = async (id) => {
-    if (comment !== "") {
-      const res = await axios.put(
-        "http://localhost:8000/post/comment",
-        { text: comment, postId: id },
-        config
-      );
-      console.log(res.data);
-      const resData = await res.data.data;
-      console.log(resData._id);
-
-      const newData = allPost.map((posts) => {
-        console.log(posts._id);
-        if (posts._id == resData._id) {
-          return resData;
-        } else {
-          return posts;
-        }
-      });
-
-      setAllPost(newData);
-      setComment("");
+    try {
+      if (comment !== "") {
+        const res = await axios.put(
+          "http://localhost:8000/post/comment",
+          { text: comment, postId: id },
+          config
+        );
+        const resData = await res.data.data;
+        const newData = allPost.map((posts) => {
+          console.log(posts._id);
+          if (posts._id == resData._id) {
+            return resData;
+          } else {
+            return posts;
+          }
+        });
+        setAllPost(newData);
+        setComment("");
+      }
+    } catch (error) {
+      console.log(error);
     }
   };
+
   useEffect(() => {
     if (!token) {
-      nav("/signup");
+      nav("/login");
     }
-    fetchAllPost();
+    if (token) {
+      fetchAllPost();
+    }
+
     setRefTrue(true);
     window.addEventListener("scroll", handleScroll);
     return () => {
@@ -140,11 +148,24 @@ function FollowingPost() {
 
   return (
     <>
-      <Header />
       <div className="conatiner ">
         <div className="contenerAllPost">
+          <Search />
+          <div></div>
+          <div className="d-flex" style={{ overflowX: "scroll" }}>
+            {allStory?.map((items, index) => {
+              return (
+                <>
+                  <CarouselPage
+                    item={items.story}
+                    userData={items}
+                    storys={story}
+                  />
+                </>
+              );
+            })}
+          </div>
           {allPost.map((item) => {
-          
             return (
               <>
                 <div>
@@ -162,7 +183,7 @@ function FollowingPost() {
                         src={
                           item.postedBy.Photo
                             ? item.postedBy.Photo
-                            : "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg?w=826&t=st=1689934495~exp=1689935095~hmac=71350deb4cde0675b1953db745e3b8a0d989993f5f9eee39a80815ceb22ffbf9"
+                            : "/images/user.png"
                         }
                       />
                     </div>
@@ -197,7 +218,7 @@ function FollowingPost() {
                   <p className="cardTitle">{item.likes.length} Likes</p>
                   <p className="cardTitle">{item.body}</p>
                   <CommentData
-                    data={{ item, comment, setComment, feactComment }}
+                    values={{ item, comment, setComment, feactComment }}
                   />
                   <div className="d-flex gap-2 align-items-center">
                     <CiFaceSmile className="fs-2 " />

@@ -2,27 +2,27 @@ import React, { useEffect, useState } from "react";
 import Header from "../compount/Header";
 import axios from "axios";
 import PostDetail from "../compount/PostDetail";
-import { useParams } from "react-router-dom";
-import UserPostDetail from "../compount/UserPostDetail";
+import { useNavigate, useParams } from "react-router-dom";
 import { config } from "../config/config";
-import CommentData from "../compount/CommentData";
-
-// const config = {
-//   headers: {
-//     Authorization: `Bearer ${localStorage.getItem("token")}`,
-//   },
-// };
+import FollowingList from "../compount/FollowingList";
+import FollowersList from "../compount/FollowersList";
+import CarouselPage from "../compount/helper/CarouselPage";
 
 function UserProfile() {
   const { userId } = useParams();
-  console.log(userId);
+
   const [user, setUser] = useState("");
+  const [userFollowing, setUserFollowing] = useState([]);
+  const [userFollowers, setUserFollowers] = useState([]);
   const [allPost, setAllPost] = useState([]);
   const [isFollow, setIsFollow] = useState(false);
   const [comment, setComment] = useState("");
-  const [like, setLike] = useState(false);
   const [postLength, setPostLength] = useState("");
   const [loading, setLoading] = useState("false");
+  const [ref, setRef] = useState(false);
+  const [story, setStory] = useState([]);
+  const nav = useNavigate();
+  const token = localStorage.getItem("token");
 
   let limit = 10;
   let skip = 0;
@@ -33,24 +33,34 @@ function UserProfile() {
     } else {
       setLoading(false);
     }
-    const res = await axios.get(
-      `http://localhost:8000/user/${userId}?limit=${limit}`,
-      config
-    );
-    const resData = await res.data;
-    // console.log(resData);
-    // console.log(resData.user);
-    console.log(resData);
-    // console.log(resData.user.followers);
-    const resAllPost = await resData.post;
-    setUser(resData.user);
-    setAllPost(resAllPost);
-    //setAllPost((allPost) => [...allPost, ...resAllPost]);
-    setPostLength(resData.postLength);
-    let id = JSON.parse(localStorage.getItem("user"))._id;
-    console.log(id);
-    if (resData.user.followers.includes(id)) {
-      setIsFollow(true);
+    try {
+      const res = await axios.get(
+        `http://localhost:8000/user/${userId}?limit=${limit}`,
+        config
+      );
+
+      const resData = await res.data;
+
+      const resAllPost = await resData.post;
+      console.log(resData);
+      setUser(resData.user);
+      setStory(resData.user.story);
+      setUserFollowing(resData.user.following);
+      setUserFollowers(resData.user.followers);
+      setAllPost(resAllPost);
+      //setAllPost((allPost) => [...allPost, ...resAllPost]);
+      setPostLength(resData.postLength);
+      let id = JSON.parse(localStorage.getItem("user"))._id;
+
+      resData.user.followers.forEach((element) => {
+        if (element._id === id) {
+          setIsFollow(true);
+        }
+      });
+    } catch (error) {
+      console.log(error);
+      // alert(error.response.data.message);
+      nav("/");
     }
   };
 
@@ -66,23 +76,40 @@ function UserProfile() {
   };
 
   const followUser = async (userId) => {
-    const res = await axios.put(
-      `http://localhost:8000/user/follow`,
-      { followId: userId },
-      config
-    );
-    setIsFollow(true);
-    console.log(res);
+    try {
+      const res = await axios.put(
+        `http://localhost:8000/user/follow`,
+        { followId: userId },
+        config
+      );
+      setIsFollow(true);
+      const resData = await res.data.data;
+      setUser(resData);
+      setUserFollowing(resData.following);
+      setUserFollowers(resData.followers);
+    } catch (error) {
+      console.log(error);
+      alert(error.response.data.message);
+    }
   };
 
   const unfollowUser = async (userId) => {
-    const res = await axios.put(
-      `http://localhost:8000/user/unfollow`,
-      { followId: userId },
-      config
-    );
-    setIsFollow(false);
-    console.log(res);
+    try {
+      const res = await axios.put(
+        `http://localhost:8000/user/unfollow`,
+        { followId: userId },
+        config
+      );
+
+      setIsFollow(false);
+      const resData = await res.data.data;
+      setUser(resData);
+      setUserFollowing(resData.following);
+      setUserFollowers(resData.followers);
+    } catch (error) {
+      console.log(error);
+      alert(error.response.data.message);
+    }
   };
 
   const feactLike = async (id) => {
@@ -92,22 +119,18 @@ function UserProfile() {
         { postId: id },
         config
       );
-      console.log(res);
       const resData = await res.data.data;
-      console.log(resData._id);
-
       const newData = allPost.map((posts) => {
-        console.log(posts._id);
         if (posts._id == resData._id) {
           return resData;
         } else {
           return posts;
         }
       });
-
       setAllPost(newData);
     } catch (error) {
       console.log(error);
+      alert(error.response.data.message);
     }
   };
 
@@ -118,87 +141,115 @@ function UserProfile() {
         { postId: id },
         config
       );
-      console.log(res);
       const resData = await res.data.data;
-      console.log(resData._id);
-
       const newData = allPost.map((posts) => {
-        console.log(posts._id);
         if (posts._id == resData._id) {
           return resData;
         } else {
           return posts;
         }
       });
-
       setAllPost(newData);
     } catch (error) {
       console.log(error);
+      alert(error.response.data.message);
     }
   };
 
   const feactComment = async (id) => {
-    if (comment !== "") {
-      const res = await axios.put(
-        "http://localhost:8000/post/comment",
-        { text: comment, postId: id },
-        config
-      );
-      console.log(res.data);
-      if (like === false) {
-        setLike(true);
-      } else {
-        setLike(false);
+    try {
+      if (comment !== "") {
+        const res = await axios.put(
+          "http://localhost:8000/post/comment",
+          { text: comment, postId: id },
+          config
+        );
+        const resData = await res.data.data;
+        const newData = allPost.map((posts) => {
+          if (posts._id == resData._id) {
+            return resData;
+          } else {
+            return posts;
+          }
+        });
+        setAllPost(newData);
+        setComment("");
       }
-      setComment("");
+    } catch (error) {
+      console.log(error);
+      alert(error.response.data.message);
     }
   };
 
   useEffect(() => {
-    feactchUser();
+    if (!token) {
+      nav("/login");
+    }
+    if (token) {
+      feactchUser();
+    }
 
     window.addEventListener("scroll", handleScroll);
     return () => {
       window.removeEventListener("scroll", handleScroll);
     };
-  }, [isFollow, like]);
-  // console.log(posts);
-  // console.log(isFollow);
+  }, []);
+
+  useEffect(() => {
+    console.log("userProfile 195");
+    if (token) {
+      feactchUser();
+    }
+    window.addEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, [ref]);
+  console.log("userProfile 205");
   return (
     <>
-      <Header />
-
       <div className="container contenerUser">
-        {/* {!loading ? (
-          <>
-          
-          </>
-        ) : (
-          <>
-            <div className="loadingTop">
-              <div className="loading"></div>
-              <p className="fs-4">Loading...</p>
-            </div>
-          </>
-        )} */}
         <div className="userInfo">
           <div className="userImgTop">
             <img
               className="innerImg"
-              src={
-                user.Photo
-                  ? user.Photo
-                  : "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg?w=826&t=st=1689934495~exp=1689935095~hmac=71350deb4cde0675b1953db745e3b8a0d989993f5f9eee39a80815ceb22ffbf9"
-              }
+              src={user?.Photo ? user.Photo : "/images/user.png"}
             />
           </div>
           <div>
-            <h2>{user.userName}</h2>
+            <h2>{user?.userName}</h2>
             <div className="d-flex gap-2">
               <p>{postLength ? postLength : "0"} post </p>
-              <p>{user.followers ? user.followers.length : "0"} followers</p>
-              <p>{user.following ? user.following.length : "0"} following</p>
+              <p className="d-flex gap-2">
+                {user?.followers ? user.followers.length : "0"}{" "}
+                <FollowersList
+                  data={{
+                    user,
+                    userFollowers,
+                    followUser,
+                    unfollowUser,
+                    isFollow,
+                    ref,
+                    setRef,
+                  }}
+                />
+              </p>
+              <p className="d-flex gap-2">
+                {user?.following ? user.following.length : "0"}{" "}
+                <FollowingList
+                  data={{
+                    user,
+                    userFollowing,
+                    followUser,
+                    unfollowUser,
+                    isFollow,
+                    ref,
+                    setRef,
+                  }}
+                />
+              </p>
             </div>
+
             <button
               onClick={() => {
                 if (isFollow) {
@@ -209,20 +260,26 @@ function UserProfile() {
               }}
               className="btn btn-primary m-2"
             >
-              {isFollow ? "Unfollow" : "Follow"}
+              {isFollow === false ? "Follow" : "unfollow"}
             </button>
           </div>
         </div>
         <hr />
+
+        <CarouselPage item={story} userData={user} />
         <div className="rowCard">
           {allPost.map((item) => {
             return (
               <>
-                {/* <UserPostDetail
-                  data={{ post, user, comment, setComment, feactComment }}
-                /> */}
                 <PostDetail
-                  data={{ item, comment, setComment, feactComment ,feactLike,feactunLike }}
+                  data={{
+                    item,
+                    comment,
+                    setComment,
+                    feactComment,
+                    feactLike,
+                    feactunLike,
+                  }}
                 />
               </>
             );

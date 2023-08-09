@@ -1,11 +1,85 @@
 import Modal from "react-bootstrap/Modal";
 import axios from "axios";
 import React, { useEffect, useState, useRef } from "react";
+import Post from "../screens/Post";
 
 function ProfilePic({ data }) {
   const { user, changeProfilePhoto, setUrl } = data;
   const [lgShow, setLgShow] = useState(false);
   const [image, setImage] = useState();
+  console.log("profile pic 10");
+  //========================= image resize ==========================//
+  const [userInfo, setuserInfo] = useState({
+    file: [],
+    filepreview: null,
+  });
+
+  const [invalidImage, setinvalidImage] = useState(null);
+  let reader = new FileReader();
+  const handleInputChange = (event) => {
+    const imageFile = event.target.files[0];
+    const imageFilname = event.target.files[0].name;
+
+    if (!imageFile) {
+      setinvalidImage("Please select image.");
+      return false;
+    }
+
+    if (!imageFile.name.match(/\.(jpg|jpeg|png|JPG|JPEG|PNG|gif)$/)) {
+      setinvalidImage("Please select valid image JPG,JPEG,PNG");
+      return false;
+    }
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        //------------- Resize img code ------------------------//
+        var canvas = document.createElement("canvas");
+        var ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0);
+
+        var MAX_WIDTH = 300;
+        var MAX_HEIGHT = 300;
+        var width = img.width;
+        var height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+
+        ctx.drawImage(img, 0, 0, width, height);
+        ctx.canvas.toBlob(
+          (blob) => {
+            const file = new File([blob], imageFilname, {
+              type: "image/jpeg",
+              lastModified: Date.now(),
+            });
+            setImage(file);
+          },
+          "image/jpeg",
+          1
+        );
+        setinvalidImage(null);
+      };
+      img.onerror = () => {
+        setinvalidImage("Invalid image content.");
+        return false;
+      };
+      //debugger
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(imageFile);
+  };
+  //========================= image resize close ==========================//
 
   const handalShare = async () => {
     const data = new FormData();
@@ -21,10 +95,6 @@ function ProfilePic({ data }) {
     setUrl(res.data.url);
   };
 
-  const imageuplode = (e) => {
-    setImage(e.target.files[0]);
-  };
-
   const hiddenFileInput = useRef(null);
   const handalClick = () => {
     hiddenFileInput.current.click();
@@ -33,6 +103,7 @@ function ProfilePic({ data }) {
   useEffect(() => {
     if (image) {
       handalShare();
+      setImage("");
     }
   }, [image]);
 
@@ -41,11 +112,7 @@ function ProfilePic({ data }) {
       <div className="userImgTop">
         <img
           onClick={() => setLgShow(true)}
-          src={
-            user.Photo
-              ? user.Photo
-              : "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg?w=826&t=st=1689934495~exp=1689935095~hmac=71350deb4cde0675b1953db745e3b8a0d989993f5f9eee39a80815ceb22ffbf9"
-          }
+          src={user.Photo ? user.Photo : "/images/user.png"}
           className="innerImg"
         />
       </div>
@@ -73,7 +140,7 @@ function ProfilePic({ data }) {
               <input
                 type="file"
                 ref={hiddenFileInput}
-                onChange={imageuplode}
+                onChange={handleInputChange}
                 accept="image/*"
                 className="form-control"
                 style={{ display: "none" }}
@@ -85,10 +152,11 @@ function ProfilePic({ data }) {
                 setUrl("");
                 changeProfilePhoto();
               }}
-              className="btn text-danger btn-light w-100"
+              className="btn text-danger btn-light w-100 mb-2"
             >
               Remove Current Photo
             </button>
+            <Post />
           </div>
         </Modal.Body>
       </Modal>

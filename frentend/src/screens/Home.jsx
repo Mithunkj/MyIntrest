@@ -1,5 +1,4 @@
 import React from "react";
-import Header from "../compount/Header";
 import { useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -10,34 +9,36 @@ import { CiFaceSmile } from "react-icons/ci";
 import CommentData from "../compount/CommentData";
 import { config } from "../config/config";
 
-console.log(localStorage.getItem("token"));
 function Home() {
   const nav = useNavigate();
   const [allPost, setAllPost] = useState([]);
-  const [refTrue, setRefTrue] = useState(false);
-  const [like, setLike] = useState(false);
   const [comment, setComment] = useState("");
-  const [loading, setLoading] = useState(false);
   const token = localStorage.getItem("token");
-  let userId = JSON.parse(localStorage.getItem("user"))._id;
+
+  console.log(allPost);
+  let userId;
+  if (token) {
+    userId = JSON.parse(localStorage.getItem("user"))._id;
+  } else {
+    userId = "";
+  }
 
   let limit = 3;
   let skip = 0;
 
   const fetchAllPost = async () => {
-    // if (loading === false) {
-    //   setLoading(true);
-    // } else {
-    //   setLoading(false);
-    // }
-    const res = await axios.get(
-      `http://localhost:8000/post/allposts?limit=${limit}&skip=${skip}`,
-      config
-    );
-    const resData = await res.data;
-    console.log(resData.data);
-    const resAllData = await resData.data;
-    setAllPost((allPost) => [...allPost, ...resAllData]);
+    try {
+      const res = await axios.get(
+        `http://localhost:8000/post/allposts?limit=${limit}&skip=${skip}`,
+        config
+      );
+      const resData = await res.data;
+      const resAllData = await resData.data;
+      setAllPost((allPost) => [...allPost, ...resAllData]);
+    } catch (error) {
+      console.log(error);
+      alert("you must be login");
+    }
   };
 
   const handleScroll = () => {
@@ -57,19 +58,14 @@ function Home() {
         { postId: id },
         config
       );
-      console.log(res);
       const resData = await res.data.data;
-      console.log(resData._id);
-
       const newData = allPost.map((posts) => {
-        console.log(posts._id);
-        if (posts._id == resData._id) {
+        if (posts._id === resData._id) {
           return resData;
         } else {
           return posts;
         }
       });
-
       setAllPost(newData);
     } catch (error) {
       console.log(error);
@@ -83,19 +79,14 @@ function Home() {
         { postId: id },
         config
       );
-      console.log(res);
       const resData = await res.data.data;
-      console.log(resData._id);
-
       const newData = allPost.map((posts) => {
-        console.log(posts._id);
-        if (posts._id == resData._id) {
+        if (posts._id === resData._id) {
           return resData;
         } else {
           return posts;
         }
       });
-
       setAllPost(newData);
     } catch (error) {
       console.log(error);
@@ -103,67 +94,68 @@ function Home() {
   };
 
   const feactComment = async (id) => {
-    if (comment !== "") {
-      const res = await axios.put(
-        "http://localhost:8000/post/comment",
-        { text: comment, postId: id },
-        config
-      );
-      console.log(res.data.data);
-      const resData = await res.data.data;
-      console.log(resData._id);
-
-      const newData = allPost.map((posts) => {
-        console.log(posts._id);
-        if (posts._id == resData._id) {
-          return resData;
-        } else {
-          return posts;
-        }
-      });
-
-      setAllPost(newData);
-      setComment("");
+    try {
+      if (comment !== "") {
+        const res = await axios.put(
+          "http://localhost:8000/post/comment",
+          { text: comment, postId: id },
+          config
+        );
+        const resData = await res.data.data;
+        const newData = allPost.map((posts) => {
+          if (posts._id === resData._id) {
+            return resData;
+          } else {
+            return posts;
+          }
+        });
+        setAllPost(newData);
+        setComment("");
+      }
+    } catch (error) {
+      console.log(error);
     }
   };
 
+  // const getPost = async (postId) => {
+  //   console.log(postId);
+  //   try {
+  //     const res = await axios.get(
+  //       `http://localhost:8000/post/${postId}`,
+  //       config
+  //     );
+  //     const resData = await res.data.data;
+  //     console.log(resData);
+  //   } catch (error) {
+  //     console.log(error);
+  //   }
+  // };
+
   useEffect(() => {
     if (!token) {
-      nav("/signup");
+      nav("/login");
     }
-    fetchAllPost();
-    setRefTrue(true);
+    if (token) {
+      fetchAllPost();
+    }
 
     window.addEventListener("scroll", handleScroll);
     return () => {
       window.removeEventListener("scroll", handleScroll);
     };
   }, []);
-  console.log(allPost);
+
   return (
     <>
-     
-      <Header />
-
-      <div className="conatiner ">
+      <div className="conatiner mt-1 ">
         <div className="contenerAllPost">
-          {/* {!loading ? (
-            <>
-             
-            </>
-          ) : (
-            <>
-              <div className="loadingTop">
-                <div className="loading"></div>
-                <p className="fs-4">Loading...</p>
-              </div>
-            </>
-          )} */}
           {allPost.map((item) => {
             return (
               <>
+                
                 <div>
                   <NavLink
+                    y
                     to={
                       userId === item.postedBy._id
                         ? "/profile"
@@ -177,7 +169,7 @@ function Home() {
                         src={
                           item.postedBy.Photo
                             ? item.postedBy.Photo
-                            : "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg?w=826&t=st=1689934495~exp=1689935095~hmac=71350deb4cde0675b1953db745e3b8a0d989993f5f9eee39a80815ceb22ffbf9"
+                            : "/images/user.png"
                         }
                       />
                     </div>
@@ -212,14 +204,14 @@ function Home() {
                   <p className="cardTitle">{item.likes.length} Likes</p>
                   <p className="cardTitle">{item.body}</p>
                   <CommentData
-                    data={{ item, comment, setComment, feactComment }}
+                    values={{ item, comment, setComment, feactComment }}
                   />
                   <div className="d-flex gap-2 align-items-center">
                     <CiFaceSmile className="fs-2 " />
                     <textarea
                       placeholder="Add acomment"
                       id="comment"
-                      value={comment} 
+                      value={comment}
                       onChange={(e) => {
                         setComment(e.target.value);
                       }}

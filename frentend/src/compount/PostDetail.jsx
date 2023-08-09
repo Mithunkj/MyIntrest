@@ -28,7 +28,7 @@ function PostDetail({ data }) {
       console.log(error);
     }
   };
-  console.log(item);
+  //console.log(item);
   return (
     <>
       <div className="column" onClick={() => setShow(true)}>
@@ -84,7 +84,7 @@ function PostDetail({ data }) {
         <p className="cardTitle">{item.body}</p>
         </div>
         
-        <CommentData data={{ item, comment, setComment, feactComment }} />
+        <CommentData values={{ item, comment, setComment, feactComment }} />
         {/* <div className="commentCardBody">
           <div className="ps-2 commentBody">
             {item.comments.map((postItem) => {

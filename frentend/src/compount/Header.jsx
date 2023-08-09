@@ -6,16 +6,22 @@ import { VscDiffAdded } from "react-icons/vsc";
 import { RiMovieFill } from "react-icons/ri";
 import { CgProfile } from "react-icons/cg";
 import { LuLogOut } from "react-icons/lu";
+import Search from "../screens/Search";
 function Header() {
+  console.log("this is headwr page 3");
   const nav = useNavigate();
+  const token = localStorage.getItem("token");
+
   const loginStatus = () => {
     const token = localStorage.getItem("token");
+    console.log(token == null);
+
     if (token) {
       return [
         <>
-          <Nav.Link href="/">
+          <NavLink to="/">
             <li className="navItem">Home</li>
-          </Nav.Link>
+          </NavLink>
           <NavLink to="/profile">
             <li className="navItem">Profile</li>
           </NavLink>
@@ -92,15 +98,29 @@ function Header() {
   };
   return (
     <>
-      <div className="headerNavLarge sticky-top bg-light p-1">
-        <div className="container heaerNav">
-          <p className="p-2">ShermyInstrst</p>
-          <ul className="navListLarg">{loginStatus()}</ul>
+      <div className="container-fluid headerNavLarge sticky-top bg-light p-1">
+        <div className="container ">
+          <div className="d-flex justify-content-between aligin-items-center">
+            <div className="logoImgTop">
+              <img
+                src="/logo2.png"
+                style={{ width: "100%", height: "100%" }}
+                onClick={() => nav("/")}
+              />
+            </div>
+            <ul className="navListLarg">{loginStatus()}</ul>
+          </div>
         </div>
       </div>
 
-      <div className="headerNavPhone">
-        <p className="p-2">ShermyInstrst</p>
+      <div className="headerNavPhone sticky-top bg-light p-1">
+        <div className="logoImgTop">
+          <img
+            src="/logo2.png"
+            style={{ width: "100%", height: "100%" }}
+            onClick={() => nav("/")}
+          />
+        </div>
         <ul className="navList">{loginStatusPhone()}</ul>
       </div>
     </>

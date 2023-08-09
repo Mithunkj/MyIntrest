@@ -2,32 +2,18 @@ import axios from "axios";
 import React, { useEffect, useRef, useState } from "react";
 import Header from "../compount/Header";
 import { useNavigate } from "react-router-dom";
-import { config } from "../config/config";
+import { config1 } from "../config/config";
 
-function Createpost() {
+function Post() {
   const [pic, setPic] = useState("/uplodeImg.jpg");
   const [image, setImage] = useState();
   const [title, setTitle] = useState();
-  const [url, setUrl] = useState();
   const [loading, setLoading] = useState(false);
   const nav = useNavigate();
-  const token = localStorage.getItem("token");
-  console.log("token 1");
-  let user;
-  if (token) {
-    user = JSON.parse(localStorage.getItem("user"));
-    console.log("this is creayte post if ");
-  } else {
-    user = "";
-  }
-  console.log("this is creayte post 4");
-  // let user = JSON.parse(localStorage.getItem("user"));
+  console.log("post page 13");
+  let user = JSON.parse(localStorage.getItem("user"));
 
   //========================= image resize ==========================//
-  const [userInfo, setuserInfo] = useState({
-    file: [],
-    filepreview: null,
-  });
 
   const [invalidImage, setinvalidImage] = useState(null);
   let reader = new FileReader();
@@ -78,11 +64,8 @@ function Createpost() {
               type: "image/jpeg",
               lastModified: Date.now(),
             });
-            setuserInfo({
-              ...userInfo,
-              file: file,
-              filepreview: URL.createObjectURL(imageFile),
-            });
+            setImage(file);
+            setPic(URL.createObjectURL(imageFile));
           },
           "image/jpeg",
           1
@@ -100,63 +83,57 @@ function Createpost() {
   };
   //========================= image resize close ==========================//
 
-  const handalShare = async () => {
-    try {
-      const data = new FormData();
-      //data.append("file", image);
-      data.append("file", userInfo.file);
-      data.append("upload_preset", "myintrest");
-      data.append("cloud_name", "myinstrestcloud");
-
-      if (!title || !pic) {
-        if (!title) {
-          alert("fill the title");
-        } else {
-          alert("fill the image");
-        }
-      } else {
-        if (loading === false) {
-          setLoading(true);
-        } else {
-          setLoading(false);
-        }
-        const res = await axios.post(
-          "https://api.cloudinary.com/v1_1/myinstrestcloud/image/upload",
-          data
-        );
-        setUrl(res.data.url);
-      }
-    } catch (error) {
-      console.log(error);
-      alert(error.response.data.message);
-    }
-  };
-
   const postFeatch = async () => {
-    if (url) {
+    if (!title) {
+      return alert("add the title");
+    }
+    const data = new FormData();
+    data.append("photo", image);
+    data.append("title", title);
+
+    if (image) {
       try {
         const resPost = await axios.post(
-          "http://localhost:8000/post/createpost",
-          { title, pic: url },
-          config
+          "http://localhost:8000/post/createNewPost",
+          data,
+          config1
         );
         console.log(resPost);
         alert("successfull");
         nav("/");
       } catch (error) {
         console.log(error);
-        alert("faled");
+        alert("failed");
       }
+    } else {
+      alert("add image");
     }
   };
-  useEffect(() => {
-    postFeatch();
-    console.log(url);
-    
-    if (!token) {
-      nav("/login");
+
+  const postStory = async () => {
+    if (!image) {
+      return alert("add your image");
     }
-  }, [url]);
+    const data = new FormData();
+    data.append("photo", image);
+    if (title) {
+      data.append("title", title);
+    }
+
+    try {
+      const resPost = await axios.put(
+        "http://localhost:8000/user/createStory",
+        data,
+        config1
+      );
+      console.log(resPost);
+      alert("successfull");
+      nav("/");
+    } catch (error) {
+      console.log(error);
+      alert("failed");
+    }
+  };
 
   return (
     <>
@@ -164,10 +141,19 @@ function Createpost() {
         <div className="containerCreatePost">
           {!loading ? (
             <>
-              <div className="userInfo">
-                <h3>Create New Post </h3>
-                <button onClick={handalShare} className="btn btn-primary">
+              <div className="text-center">
+                <h3>Create New Post mithun </h3>
+                <button
+                  onClick={postFeatch}
+                  className="btn btn-light text-primary "
+                >
                   Share
+                </button>
+                <button
+                  onClick={postStory}
+                  className="btn btn-light text-primary ms-3"
+                >
+                  Add Story
                 </button>
               </div>
               <div className="userInfo">
@@ -184,13 +170,7 @@ function Createpost() {
                 </div>
 
                 <div className="w-75 createImgTop">
-                  <img
-                    className="w-100"
-                    src={
-                      userInfo.filepreview === null ? pic : userInfo.filepreview
-                    }
-                    alt="UploadImage"
-                  />
+                  <img className="w-100" src={pic} alt="UploadImage" />
                 </div>
               </div>
               <div className="userInfo">
@@ -228,4 +208,4 @@ function Createpost() {
   );
 }
 
-export default Createpost;
+export default Post;
