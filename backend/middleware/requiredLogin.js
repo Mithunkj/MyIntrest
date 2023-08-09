@@ -19,8 +19,13 @@ module.exports = (req, res, next) => {
 
     User.findById(userId).then((userdata) => {
       req.user = userdata;
-      console.log("login user 254154 ");
-      next();
+      if (req.user === null) {
+        res.status(401).json({ message: "authentication failed" });
+      } else {
+        console.log("login user 254154 ");
+        console.log("user login athentication", req.user);
+        next();
+      }
     });
   });
 };

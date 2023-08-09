@@ -5,7 +5,6 @@ const postSchema = new mongoose.Schema(
   {
     body: { type: String },
     photo: { type: String, required: true },
-    story: { type: String },
     likes: [{ type: ObjectId, ref: "User" }],
     comments: [
       {

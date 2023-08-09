@@ -5,10 +5,16 @@ const userSchema = new mongoose.Schema(
   {
     user: { type: String },
     userName: { type: String, required: true },
-    mobileNumber: { type: String, required: true },
+    mobileNumber: { type: String },
     email: { type: String, required: true },
     password: { type: String, required: true },
     Photo: { type: String },
+    story: [
+      {
+        title: { type: String },
+        image: { type: String },
+      },
+    ],
     followers: [{ type: ObjectId, ref: "User" }],
     following: [{ type: ObjectId, ref: "User" }],
   },
