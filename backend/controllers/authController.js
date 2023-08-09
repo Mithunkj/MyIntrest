@@ -1,77 +1,149 @@
 const express = require("express");
-const expressAsyncHandler = require("express-async-handler");
 const User = require("../model/userModel");
 const Post = require("../model/post");
 const app = express();
 const bcrypt = require("bcrypt");
-const Joi = require("joi");
 const jwt = require("jsonwebtoken");
+const expressAsyncHandler = require("express-async-handler");
+const registerSchema = require("../helpers/joiValidatior");
 
 const refresh = process.env.Jwt_swcret;
 
-register = async (req, res) => {
+//unique user name create
+const creatUserName = (data) => {
+  let val = Math.floor(1000 + Math.random() * 9000);
+  let userName = data;
+  let secondSlice;
+  let randomNum;
+  let firstSlice;
+  if (userName.length < 11) {
+    randomNum = Math.floor(Math.random() * (userName.length - 1)) + 1;
+    firstSlice = userName.slice(0, randomNum);
+    secondSlice = userName.slice(randomNum, userName.length);
+  } else {
+    randomNum = Math.floor(Math.random() * 6) + 1;
+    firstSlice = userName.slice(0, randomNum);
+    secondSlice = userName.slice(randomNum, 10);
+  }
+
+  function makeid(length) {
+    let result = "";
+    const characters = "._";
+    const charactersLength = characters.length;
+    let counter = 0;
+    while (counter < length) {
+      result += characters.charAt(Math.floor(Math.random() * charactersLength));
+      counter += 1;
+    }
+    return result;
+  }
+  newName = firstSlice + makeid(1) + secondSlice + val;
+  return newName;
+};
+
+register = expressAsyncHandler(async (req, res) => {
+  const value = await registerSchema(req.body);
+  console.log("in register1");
+  if (value.error) {
+    console.log("validation error");
+    res.status(400);
+    throw new Error(value.error.details[0].message);
+  }
+
+  const existUser = await User.find({
+    $or: [{ email: req.body.email }, { userName: req.body.userName }],
+  });
+
+  if (existUser.length > 0) {
+    res.status(400);
+    throw new Error("user already present");
+  }
+
+  const hashPassword = await bcrypt.hash(req.body.password, 12);
+
+  const newUser = await User.create({
+    user: req.body.user,
+    userName: creatUserName(req.body.userName),
+    password: hashPassword,
+    email: req.body.email,
+    mobileNumber: req.body.mobileNumber,
+  });
+
+  res.status(201).json({
+    title: "New user has been created",
+    data: newUser,
+  });
+});
+
+//login user
+login = async (req, res) => {
+  console.log(req.body);
   try {
-    if (
-      !req.body.userName ||
-      !req.body.email ||
-      !req.body.mobileNumber ||
-      !req.body.password
-    ) {
-      return res.status(400).send({ error: "fill all fields" });
+    if (!req.body.email || !req.body.password) {
+      return res.status(404).send({ message: "user not found" });
     }
+    const user = await User.findOne({ email: req.body.email });
 
-    const existUser = await User.find({
-      $or: [{ email: req.body.email }, { userName: req.body.userName }],
-    });
-    console.log(existUser);
-
-    if (existUser.length > 0) {
-      return res.status(400).json({ error: "user already present" });
+    if (user && bcrypt.compareSync(req.body.password, user.password)) {
+      const token = jwt.sign({ userId: user._id }, refresh);
+      const { _id, userName, email, Photo } = user;
+      res.json({
+        user: { _id, userName, email, Photo },
+        token: token,
+      });
+    } else {
+      res.status(404).send({ message: "user not found" });
     }
-
-    const hashPassword = await bcrypt.hash(req.body.password, 12);
-    console.log("test 2");
-    // console.log(req.body);
-    const newUser = await User.create({
-      userName: req.body.userName,
-      password: hashPassword,
-      email: req.body.email,
-      mobileNumber: req.body.mobileNumber,
-      address: req.body.address,
-    });
-    //console.log(newUser);
-    res.status(201).json({
-      title: "new user has been created",
-      data: newUser,
-    });
   } catch (error) {
     console.log(error);
+    res.status(404).json({ message: error });
   }
 };
 
-login = async (req, res) => {
-  console.log(req.body);
-  if (!req.body.email || !req.body.password) {
-    return res.status(404).send({ error: "user not found" });
-  }
-  console.log("test 2");
+//googleLogin
+googleLogin = async (req, res) => {
+  try {
+    const { email_verified, name, userName, email, Photo, clientId } = req.body;
 
-  const user = await User.findOne({ email: req.body.email });
-  console.log(user);
-  if (user && bcrypt.compareSync(req.body.password, user.password)) {
-    const token = jwt.sign({ userId: user._id }, refresh);
-    const { _id, userName, email } = user;
-    res.json({
-      user: { _id, userName, email },
-      // userId: user._id,
-      token: token,
-    });
-  } else {
-    res.status(404).send({ error: "user not found" });
+    if (email_verified) {
+      const existUser = await User.findOne({ email: email });
+      if (existUser) {
+        const token = jwt.sign({ userId: existUser._id }, refresh);
+        const { _id, name, userName, email, Photo } = existUser;
+        res.json({
+          user: { _id, name, userName, email, Photo },
+          token: token,
+        });
+        console.log({ token, user: { _id, name, userName, email } });
+      } else {
+        const password = req.body.email + req.body.clientId;
+        const newUser = await User.create({
+          name: req.body.name,
+          userName: creatUserName(req.body.userName),
+          email: req.body.email,
+          password: password,
+          Photo: req.body.Photo,
+        });
+        console.log(newUser);
+        let userId = newUser._id.toString();
+        console.log(newUser);
+        const token = jwt.sign({ userId: userId }, refresh);
+        const { _id, name, userName, email, Photo } = newUser;
+        res.json({
+          user: { _id, name, userName, email, Photo },
+
+          token: token,
+        });
+      }
+    }
+  } catch (error) {
+    console.log(error);
+    res.send({ message: error });
   }
 };
 
 module.exports = {
   register,
   login,
+  googleLogin,
 };
