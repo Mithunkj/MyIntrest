@@ -148,11 +148,10 @@ function Home() {
   return (
     <>
       <div className="conatiner mt-1 ">
-        <div className="contenerAllPost">
+        <div className="col-lg-6 col-md-6 m-auto">
           {allPost.map((item) => {
             return (
               <>
-                
                 <div>
                   <NavLink
                     y
@@ -174,12 +173,15 @@ function Home() {
                       />
                     </div>
 
-                    <p className="cardUserName">{item.postedBy.userName}</p>
+                    <p className="text-dark">{item.postedBy.userName}</p>
                   </NavLink>
                 </div>
 
                 <div className="cardHeader">
-                  <img src={item.photo} className="userImg" />
+                  <img
+                    src={item?.photo ? item.photo : "/images/user.png"}
+                    className="userImg"
+                  />
                 </div>
                 <div className="cardBody">
                   <div>
@@ -201,8 +203,8 @@ function Home() {
                       </span>
                     )}
                   </div>
-                  <p className="cardTitle">{item.likes.length} Likes</p>
-                  <p className="cardTitle">{item.body}</p>
+                  <p className="mb-0">{item.likes.length} Likes</p>
+                  <p className="mb-0">{item.body}</p>
                   <CommentData
                     values={{ item, comment, setComment, feactComment }}
                   />
@@ -222,7 +224,7 @@ function Home() {
                       style={{ maxHeight: "30px" }}
                     ></textarea>
                     <button
-                      className="btn btn-primary p-1"
+                      className="btn button p-2"
                       onClick={() => {
                         feactComment(item._id);
                       }}

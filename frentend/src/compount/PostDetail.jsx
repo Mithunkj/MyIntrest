@@ -9,8 +9,15 @@ import { FcLike } from "react-icons/fc";
 
 function PostDetail({ data }) {
   const [show, setShow] = useState(false);
-  const { item, comment, setComment, feactComment, feactLike, feactunLike,allPost } =
-    data;
+  const {
+    item,
+    comment,
+    setComment,
+    feactComment,
+    feactLike,
+    feactunLike,
+    allPost,
+  } = data;
 
   let myName = JSON.parse(localStorage.getItem("user"));
   const nav = useNavigate();
@@ -58,7 +65,7 @@ function PostDetail({ data }) {
             ""
           )}
         </Modal.Header>
-       
+
         <div className="fullImgTop">
           <img src={item.photo} className="userImg" />
         </div>
@@ -81,54 +88,10 @@ function PostDetail({ data }) {
             </span>
           )}
           <p className="cardTitle">{item.likes.length} Likes</p>
-        <p className="cardTitle">{item.body}</p>
+          <p className="cardTitle">{item.body}</p>
         </div>
-        
+
         <CommentData values={{ item, comment, setComment, feactComment }} />
-        {/* <div className="commentCardBody">
-          <div className="ps-2 commentBody">
-            {item.comments.map((postItem) => {
-              return (
-                <>
-                  <p className="commentUserName">
-                    {postItem.postedBy.userName}
-                  </p>
-                  <p className="commentDis">{postItem.comment}</p>
-                </>
-              );
-            })}
-          </div>
-          <div className="p-2">
-            <div className="mb-2">
-              <p className="cardTitle">{item.likes.length} Likes</p>
-              <p className="cardTitle">{item.body}</p>
-            </div>
-            <div className="d-flex gap-2 align-items-center">
-              <CiFaceSmile className="fs-2 " />
-              <textarea
-                placeholder="Add acomment"
-                id="comment"
-                value={comment}
-                onChange={(e) => {
-                  setComment(e.target.value);
-                }}
-                className="form-control"
-                name="textarea"
-                rows="1"
-                cols="40"
-                style={{ maxHeight: "120px" }}
-              ></textarea>
-              <button
-                onClick={() => {
-                  feactComment(item._id);
-                }}
-                className="btn btn-primary"
-              >
-                Post
-              </button>
-            </div>
-          </div>
-        </div> */}
       </Modal>
     </>
   );
