@@ -12,7 +12,9 @@ const refresh = process.env.Jwt_swcret;
 //unique user name create
 const creatUserName = (data) => {
   let val = Math.floor(1000 + Math.random() * 9000);
-  let userName = data;
+  let userName = data.trim().split(" ").join("");
+
+  console.log(userName);
   let secondSlice;
   let randomNum;
   let firstSlice;
@@ -62,7 +64,7 @@ register = expressAsyncHandler(async (req, res) => {
   const hashPassword = await bcrypt.hash(req.body.password, 12);
 
   const newUser = await User.create({
-    user: req.body.user,
+    user: req.body.user.trim(),
     userName: creatUserName(req.body.userName),
     password: hashPassword,
     email: req.body.email,
@@ -76,71 +78,61 @@ register = expressAsyncHandler(async (req, res) => {
 });
 
 //login user
-login = async (req, res) => {
+login = expressAsyncHandler(async (req, res) => {
   console.log(req.body);
-  try {
-    if (!req.body.email || !req.body.password) {
-      return res.status(404).send({ message: "user not found" });
-    }
-    const user = await User.findOne({ email: req.body.email });
-
-    if (user && bcrypt.compareSync(req.body.password, user.password)) {
-      const token = jwt.sign({ userId: user._id }, refresh);
-      const { _id, userName, email, Photo } = user;
-      res.json({
-        user: { _id, userName, email, Photo },
-        token: token,
-      });
-    } else {
-      res.status(404).send({ message: "user not found" });
-    }
-  } catch (error) {
-    console.log(error);
-    res.status(404).json({ message: error });
+  if (!req.body.email || !req.body.password) {
+    return res.status(404).send({ message: "user not found" });
   }
-};
+  const user = await User.findOne({ email: req.body.email });
+
+  if (user && bcrypt.compareSync(req.body.password, user.password)) {
+    const token = jwt.sign({ userId: user._id }, refresh);
+    const { _id, userName, email, Photo } = user;
+    res.json({
+      user: { _id, userName, email, Photo },
+      token: token,
+    });
+  } else {
+    res.status(404).send({ message: "user not found" });
+  }
+});
 
 //googleLogin
-googleLogin = async (req, res) => {
-  try {
-    const { email_verified, name, userName, email, Photo, clientId } = req.body;
+googleLogin = expressAsyncHandler(async (req, res) => {
+  const { email_verified, name, userName, email, Photo, clientId } = req.body;
 
-    if (email_verified) {
-      const existUser = await User.findOne({ email: email });
-      if (existUser) {
-        const token = jwt.sign({ userId: existUser._id }, refresh);
-        const { _id, name, userName, email, Photo } = existUser;
-        res.json({
-          user: { _id, name, userName, email, Photo },
-          token: token,
-        });
-        console.log({ token, user: { _id, name, userName, email } });
-      } else {
-        const password = req.body.email + req.body.clientId;
-        const newUser = await User.create({
-          name: req.body.name,
-          userName: creatUserName(req.body.userName),
-          email: req.body.email,
-          password: password,
-          Photo: req.body.Photo,
-        });
-        console.log(newUser);
-        let userId = newUser._id.toString();
-        console.log(newUser);
-        const token = jwt.sign({ userId: userId }, refresh);
-        const { _id, name, userName, email, Photo } = newUser;
-        res.json({
-          user: { _id, name, userName, email, Photo },
+  if (email_verified) {
+    const existUser = await User.findOne({ email: email });
+    if (existUser) {
+      const token = jwt.sign({ userId: existUser._id }, refresh);
+      const { _id, name, userName, email, Photo } = existUser;
+      res.json({
+        user: { _id, name, userName, email, Photo },
+        token: token,
+      });
+      console.log({ token, user: { _id, name, userName, email } });
+    } else {
+      const password = req.body.email + req.body.clientId;
+      const newUser = await User.create({
+        name: req.body.name,
+        userName: creatUserName(req.body.userName),
+        email: req.body.email,
+        password: password,
+        Photo: req.body.Photo,
+      });
+      console.log(newUser);
+      let userId = newUser._id.toString();
+      console.log(newUser);
+      const token = jwt.sign({ userId: userId }, refresh);
+      const { _id, name, userName, email, Photo } = newUser;
+      res.json({
+        user: { _id, name, userName, email, Photo },
 
-          token: token,
-        });
-      }
+        token: token,
+      });
     }
-  } catch (error) {
-    console.log(error);
-    res.send({ message: error });
   }
-};
+});
 
 module.exports = {
   register,
